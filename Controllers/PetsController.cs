@@ -18,14 +18,12 @@ namespace TamagotchiAPI.Controllers
     {
         // This is the variable you use to have access to your database
         private readonly DatabaseContext _context;
-
         // Constructor that receives a reference to your database context
         // and stores it in _context for you to use in your API methods
         public PetsController(DatabaseContext context)
         {
             _context = context;
         }
-
         // GET: api/Pets
         //
         // Returns a list of all your Pets
@@ -35,9 +33,8 @@ namespace TamagotchiAPI.Controllers
         {
             // Uses the database context in `_context` to request all of the Pets, sort
             // them by row id and return them as a JSON array.
-            return await _context.Pets.OrderBy(row => row.Id).ToListAsync();
+            return await _context.Pets.OrderBy(pet => pet.Name).ToListAsync();
         }
-
         // GET: api/Pets/5
         //
         // Fetches and returns a specific pet by finding it by id. The id is specified in the
@@ -56,11 +53,9 @@ namespace TamagotchiAPI.Controllers
                 // Return a `404` response to the client indicating we could not find a pet with this id
                 return NotFound();
             }
-
             // Return the pet as a JSON object.
             return pet;
         }
-
         // PUT: api/Pets/5
         //
         // Update an individual pet with the requested id. The id is specified in the URL
@@ -80,7 +75,6 @@ namespace TamagotchiAPI.Controllers
             {
                 return BadRequest();
             }
-
             // Tell the database to consider everything in pet to be _updated_ values. When
             // the save happens the database will _replace_ the values in the database with the ones from pet
             _context.Entry(pet).State = EntityState.Modified;
@@ -107,11 +101,9 @@ namespace TamagotchiAPI.Controllers
                     throw;
                 }
             }
-
             // Return a copy of the updated data
             return Ok(pet);
         }
-
         // POST: api/Pets
         //
         // Creates a new pet in the database.
@@ -149,7 +141,6 @@ namespace TamagotchiAPI.Controllers
                 // There wasn't a pet with that id so return a `404` not found
                 return NotFound();
             }
-
             // Tell the database we want to remove this record
             _context.Pets.Remove(pet);
 
@@ -169,7 +160,7 @@ namespace TamagotchiAPI.Controllers
         //                                                              |
         //                                                          Pet ID comes from the URL
         {
-            // First, lets find the pet (by using the ID)
+            // Find the pet (by using the ID)
             var pet = await _context.Pets.FindAsync(id);
 
             // If the pet doesn't exist: return a 404 Not found.
@@ -178,6 +169,16 @@ namespace TamagotchiAPI.Controllers
                 // Return a `404` response to the client indicating we could not find a pet with this id
                 return NotFound();
             }
+            // DateTime.Now = LastInteractedWithDate
+            // pet.IsDead
+
+            // pet.IsDead = (DateTime.Now - pet.LastInteractedWith).TotalSeconds > 3 ? true : false;
+            // if (pet.IsDead)
+            // {
+            //     return Ok();
+            // }
+
+
             // Associate the playtime to the given pet.
             playtime.PetId = pet.Id;
 
@@ -205,6 +206,8 @@ namespace TamagotchiAPI.Controllers
             pet.HappinessLevel += 3;
             pet.HungerLevel -= 3;
 
+            feeding.When = pet.LastInteractedWith;
+
             _context.Feedings.Add(feeding);
             await _context.SaveChangesAsync();
 
@@ -224,9 +227,10 @@ namespace TamagotchiAPI.Controllers
             _context.Scoldings.Add(scolding);
             await _context.SaveChangesAsync();
 
+            scolding.When = pet.LastInteractedWith;
+
             return Ok(scolding);
         }
-
         // Private helper method that looks up an existing pet by the supplied id
         private bool PetExists(int id)
         {
